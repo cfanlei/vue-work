@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Tutorial Demo</title>
+</head>
+
+<body>
+    <div id="mountNode"></div>
+    <script src="https://gw.alipayobjects.com/os/antv/pkg/_antv.g6-3.7.1/dist/g6.min.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script>
+        (async () => {
+            let data = null
+            await axios({
+                method: 'get',
+                url: 'http://localhost:4444',
+            }).then(res => { data = res.data });
+
+        })()
+        function graphRender() {
+            //自定义company节点
+            G6.registerNode("companyNode",{
+
+            })
+            const gOptions = {
+                container: 'mountNode', // 指定图画布的容器 id，与第 9 行的容器对应
+                // 画布宽高
+                width: 800,
+                height: 500,
+            }
+            const data = {
+
+            }
+            const graph = new G6.Graph(gOptions)
+            graph.data(data)
+            graph.render()
+        }
+    </script>
+</body>
+
+</html>
