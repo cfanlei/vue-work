@@ -10,33 +10,201 @@
     <div id="mountNode"></div>
     <script src="https://gw.alipayobjects.com/os/antv/pkg/_antv.g6-3.7.1/dist/g6.min.js"></script>
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
     <script>
+        function getImageUrl(str) {
+            let res = '../src/assets/dc-icon-省级.png'
+            switch (str) {
+                case 'city_level':
+                    res = '../src/assets/dc-icon-市级.png'
+                    break;
+                default:
+                    res = '../src/assets/dc-icon-省级.png'
+                    break;
+            }
+            return res
+        }
+        function getComapanyUrl() {
+            return '../src/assets/我的企业.png'
+        }
+        //type :0/1
+        function getLevel(data, type) {
+            const TYPE_MAP = [
+                'legalPersonLevel',
+                'managementLevel'
+            ]
+            if (TYPE_MAP[type] === undefined || !data) return
+            return data[TYPE_MAP[type]]
+        }
+        function getAvatar(nodeType) {
+            let url = '../src/assets/avatar.png'
+            switch (nodeType) {
+                case 'institutionDepartmentList':
+                    url = '../src/assets/avatar.png'
+                    break;
+                case 'leadershipDetailList':
+                    url = "../src/assets/loadfail.png"
+                    break;
+                case 'enterpriseDraftTreeList':
+                    url = '../src/assets/noplan.png'
+                    break;
+                default:
+                    url = '../src/assets/avatar.png'
+            }
+            return url
+        }
+        function graphRender(originData) {
+            const relativeWidth = 1200
+            const relativeHeight = 1200
+            const nodes = []
+            const edges = []
+            const LEVLE_TYPE = 0 //法人层级
+            //自定义下级主节点
+            G6.registerNode("sub-root", {
+                draw(cfg, group) {
+                    const self = this
+                    return group.addShape("dom", {
+                        attrs: {
+                            width: cfg.size[0],
+                            height: cfg.size[1],
+                            // 传入 DOM 的 html，带有原生 onclick 事件
+                            html: `<div style="height:25px;display:flex;align-items:center;padding:10px;background-color:#ccc" >
+                                <img style="height:100%" src='${getAvatar(cfg.nodeType)}'/>
+                                <div onclick='console.log("xvcvc")' style='margin-left:10px'>${cfg.nodeTypeCN}</div>
+                                </div>
+                                `,
+                        },
+                        draggable: false,
+                    })
+                }
+            }, 'single-node')
+            //自定义company节点
+            G6.registerNode("main-company", {
+                draw(cfg, group) {
+                    const self = this
+                    return group.addShape("dom", {
+                        attrs: {
+                            width: cfg.size[0],
+                            height: cfg.size[1],
+                            // 传入 DOM 的 html，带有原生 onclick 事件
+                            html: `<div style="height:25px;background-color: rgba(129, 211, 248, 0.43);display:flex;align-items:center;padding:10px" >
+                                <img style="height:100%" src='${getImageUrl(cfg.data.corpLevel)}'/>
+                                <img style="height:100%" src='${getComapanyUrl()}'/>
+                                <div style="color:green;align-self:end;font-size:12px">${getLevel(cfg.data, LEVLE_TYPE)}级</div>
+                                <div onclick='console.log("xvcvc")' style='margin-left:10px'>${cfg.data.fullName}</div>
+                                <button type="button" class="el-button el-button--success is-circle">${cfg.data.mainOrNot}</button>
+                                </div>
+                                `,
+                        },
+                        draggable: false,
+                    })
+                }
+            }, 'single-node')
+            //自定义下级企业节点
+            G6.registerNode("sub-company", {
+                draw(cfg, group) {
+                    const self = this
+                    return group.addShape("dom", {
+                        attrs: {
+                            width: cfg.size[0],
+                            height: cfg.size[1],
+                            // 传入 DOM 的 html，带有原生 onclick 事件
+                            html: `<div style="height:25px;display:flex;align-items:center;padding:10px" >
+                                <img style="height:100%" src='${getImageUrl(cfg.data.corpLevel)}'/>
+                                <img style="height:100%" src='${getComapanyUrl()}'/>
+                                <div style="color:green;align-self:end;font-size:12px">${getLevel(cfg.data, LEVLE_TYPE)}级</div>
+                                <div onclick='console.log("xvcvc")' style='margin-left:10px'>${cfg.data.fullName}</div>
+                                <button type="button" class="el-button el-button--success is-circle">${cfg.data.mainOrNot}</button>
+                                </div>
+                                `,
+                        },
+                        draggable: false,
+                    })
+                }
+            }, 'single-node')
+            G6.registerLayout('liu-layout', {
+                getDefaultCfg() {
+                    return {}
+                },
+
+            })
+            //根企业节点
+            nodes.push({
+                id: originData.enterpriseId,
+                x: relativeWidth / 2 -200,
+                y: 50,
+                type: "main-company",
+                size: [400, 40],
+                data: originData
+            }, {
+                id: "sub-root-leadershipDetailList",
+                x: relativeWidth / 3 -75,
+                y: 200,
+                type: "sub-root",
+                nodeType: "leadershipDetailList",
+                nodeTypeCN:'领导班子',
+                size: [150, 40],
+                data: originData.leadershipDetailList/*领导班子*/
+            }, {
+                id: "sub-root-institutionDepartmentList",
+                x: relativeWidth / 3 *2 - 75,
+                y: 200,
+                type: "sub-root",
+                nodeType: "institutionDepartmentList",
+                nodeTypeCN:'内设部门',
+                size: [150, 40],
+                data: originData.institutionDepartmentList/*内设部门*/
+            }, {
+                id: "sub-root-enterpriseDraftTreeList",
+                x: relativeWidth / 2 -75,
+                y: 400,
+                type: "sub-root",
+                nodeType: "enterpriseDraftTreeList",
+                nodeTypeCN:'下级企业',
+                size: [150, 40],
+                data: originData.enterpriseDraftTreeList/*下级企业*/
+            })
+            edges.push({
+                source: originData.enterpriseId,
+                target: "sub-root-institutionDepartmentList",
+                type: 'polyline',
+            },{
+                source: originData.enterpriseId,
+                target: "sub-root-leadershipDetailList",
+                type: 'polyline',
+            },{
+                source: originData.enterpriseId,
+                target: "sub-root-enterpriseDraftTreeList",
+                type: 'line',
+            })
+            const data = {
+                nodes,
+                edges
+            };
+            const graph = new G6.Graph({
+                container: 'mountNode',
+                renderer: 'svg',
+                width: 2000,
+                height: 2000,
+                defaultNode: {
+                    size: [400, 40],
+                },
+            });
+            graph.data(data)
+            graph.render()
+        }
         (async () => {
             let data = null
             await axios({
                 method: 'get',
                 url: 'http://localhost:4444',
-            }).then(res => { data = res.data });
+            }).then(res => {
+                data = res.data
+                graphRender(data)
+            });
 
-        })()
-        function graphRender() {
-            //自定义company节点
-            G6.registerNode("companyNode",{
-
-            })
-            const gOptions = {
-                container: 'mountNode', // 指定图画布的容器 id，与第 9 行的容器对应
-                // 画布宽高
-                width: 800,
-                height: 500,
-            }
-            const data = {
-
-            }
-            const graph = new G6.Graph(gOptions)
-            graph.data(data)
-            graph.render()
-        }
+        })()    
     </script>
 </body>
 

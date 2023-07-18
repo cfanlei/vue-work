@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Tutorial Demo</title>
+</head>
+
+<body>
+    <div id="mountNode"></div>
+    <script src="https://gw.alipayobjects.com/os/antv/pkg/_antv.g6-3.7.1/dist/g6.min.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <!-- 引入样式 -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <script>
+        G6.registerEdge('hvh', {
+            draw(cfg, group) {
+                const startPoint = cfg.startPoint;
+                const endPoint = cfg.endPoint;
+                const shape = group.addShape('path', {
+                    attrs: {
+                        stroke: '#333',
+                        path: [
+                            ['M', startPoint.x, startPoint.y],
+                            ['L', endPoint.x / 3 + (2 / 3) * startPoint.x, startPoint.y], // 三分之一处
+                            ['L', endPoint.x / 3 + (2 / 3) * startPoint.x, endPoint.y], // 三分之二处
+                            ['L', endPoint.x, endPoint.y],
+                        ],
+                    },
+                    // must be assigned in G6 3.3 and later versions. it can be any value you want
+                    name: 'path-shape',
+                });
+                return shape;
+            },
+        });
+        const data = {
+            nodes: [
+                {
+                    id: 'node1',
+                    x: 100,
+                    y: 200,
+                    anchorPoints: [
+                        [0, 0.5],
+                        [1, 0.5],
+                    ],
+                },
+                {
+                    id: 'node2',
+                    x: 200,
+                    y: 100,
+                    anchorPoints: [
+                        [0, 0.5],
+                        [1, 0.5],
+                    ],
+                },
+                {
+                    id: 'node3',
+                    x: 200,
+                    y: 300,
+                    anchorPoints: [
+                        [0, 0.5],
+                        [1, 0.5],
+                    ],
+                },
+            ],
+            edges: [
+                {
+                    id: 'edge1',
+                    target: 'node2',
+                    source: 'node1',
+                    type: 'hvh',
+                },
+                {
+                    id: 'edge2',
+                    target: 'node3',
+                    source: 'node1',
+                    type: 'hvh',
+                },
+            ],
+        };
+        const graph = new G6.Graph({
+                container: 'mountNode',
+                renderer: 'svg',
+                width: 2000,
+                height: 2000,
+                defaultNode: {
+                    
+                },
+            });
+        graph.data(data)
+        graph.render()
+    </script>
+</body>
+
+</html>
