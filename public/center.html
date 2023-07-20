@@ -1,0 +1,128 @@
+<!--
+ * @Author: cfanlei cfanlei@126.com
+ * @Date: 2023-07-18 17:30:37
+ * @LastEditors: cfanlei cfanlei@126.com
+ * @LastEditTime: 2023-07-20 09:57:44
+ * @FilePath: /vue-ele/hello-world/public/center.html
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
+</head>
+<body>
+    <script>
+        /**
+         * @description: 
+         * @param {true/false} centerFlag 是否返回中值
+         * @param {num} containerWidth 容器宽度
+         * @param {num} margin 节点之间的间隙
+         * @param {array:[{}]} items 处理的数组
+         * @param {num} itemWidth 节点的宽度
+         * @param {num} beginCenterPoint 上级中点
+         * @return {*} 返回中值或者起始点的值
+         */
+         function centerArray(centerFlag, containerWidth, margin, items, itemWidth, beginCenterPoint) {
+            if (!(Array.isArray(items) && items.length > 0)) return []
+            let edgesWidth = 0 //头尾剩余宽度
+            let startLeft = 0 //起始节点起始值
+            let len = items.length * itemWidth
+            let returnArray = []
+            let marginWidthAll = (items.length - 1) * margin
+            let _items = _.cloneDeep(items)
+            if (len > containerWidth || len + marginWidthAll > containerWidth) {
+                //超出容器长度处理 第n个未超出容器，第n+1个超出容器，则只返回第n-1个数据，第n个数据为-1，表示超出部分
+                let isOverfill = false
+                let itemsTemp = []
+                try {
+                    items.forEach((item, index) => {
+                        if (isOverfill) throw new Error("超出容器大小...")
+                        let currentLength = (index + 1) * itemWidth + index * margin
+                        let lastLength = (index + 2) * itemWidth + (index + 1) * margin
+                        if (currentLength > containerWidth || lastLength > containerWidth) {
+                            itemsTemp.push(-1)
+                            isOverfill = true
+                        } else {
+                            itemsTemp.push(item)
+                        }
+                    })
+                } catch (e) {
+                    console.error(e)
+                } finally {
+                    _items = itemsTemp
+                }
+            }
+            //重新计算边缘间隙
+            const _len = _items.length * itemWidth
+            const _marginWidthAll = (_items.length - 1) * margin
+            edgesWidth = containerWidth - _len - _marginWidthAll
+            startLeft = edgesWidth / 2
+            if (centerFlag) {
+                //返回中值数组
+                returnArray = _items.map((item, index) => {
+                    let isOverfill = item === -1 ? -1 : 1
+                    let _margin = index > 0 ? margin : 0
+                    let _startLeft = startLeft + (index * itemWidth) + _margin * index + itemWidth / 2
+                    return (_startLeft + beginCenterPoint - containerWidth / 2) * isOverfill
+                })
+            } else {
+                //返回起始值数组
+                returnArray = _items.map((item, index) => {
+                    let isOverfill = item === -1 ? -1 : 1
+                    let _margin = index > 0 ? margin : 0
+                    let _startLeft = startLeft + (index * itemWidth) + _margin * index
+                    return (_startLeft + beginCenterPoint - containerWidth / 2) * isOverfill
+                })
+            }
+            return returnArray
+        }
+
+        //let  res = main(false,400,10,[{name:"e"},{name:"e"},{name:"e"},{name:"e"},{name:"e"},{name:"e"},{name:"e"}],40)
+        let  res = centerArray(true,400,50,[{name:"e"},{name:"e"},{name:"e"},{name:"e"},{name:"e"},{name:"e"},{name:"e"}],40)
+        console.log(res)
+
+        /**
+         * @description: 第二版：容器宽度自动计算，不会出现溢出
+         * @param {num} containerWidth 容器宽度
+         * @param {num} margin 节点之间的间隙
+         * @param {array:[{}]} items 处理的数组
+         * @param {num} itemWidth 节点的宽度
+         * @param {num} beginCenterPoint 上级中点
+         * @return {*} 返回中值或者起始点的值
+         */
+         function main(centerFlag, margin, items, itemWidth, beginCenterPoint) {
+            if (!(Array.isArray(items) && items.length > 0)) return []
+            containerWidth = item.length * itemWidth + (item.length+1) * margin
+            let edgesWidth = 0 //头尾剩余宽度
+            let startLeft = 0 //起始节点起始值
+            let len = items.length * itemWidth
+            let returnArray = []
+            let marginWidthAll = (items.length - 1) * margin
+            //重新计算边缘间隙
+            edgesWidth = containerWidth - len - marginWidthAll
+            startLeft = edgesWidth / 2
+            if (centerFlag) {
+                //返回中值数组
+                returnArray = items.map((item, index) => {
+                    let _margin = index > 0 ? margin : 0
+                    let _startLeft = startLeft + (index * itemWidth) + _margin * index + itemWidth / 2
+                    return _startLeft + beginCenterPoint - containerWidth / 2
+                })
+            } else {
+                //返回起始值数组
+                returnArray = items.map((item, index) => {
+                    let _margin = index > 0 ? margin : 0
+                    let _startLeft = startLeft + (index * itemWidth) + _margin * index
+                    return _startLeft + beginCenterPoint - containerWidth / 2
+                })
+            }
+            return returnArray
+        }
+
+    </script>
+</body>
+</html>

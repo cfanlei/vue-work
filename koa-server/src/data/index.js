@@ -256,6 +256,19 @@ const data ={
             "id": "1679654492540375040",
             "legalDepartmentTree": "/1679654492540375040",
             "parentId": ""
+        },
+        {
+            "parentManagementTree": "/1679654492540375040",
+            "legalPersonLevel": 1,
+            "mainOrNot": null,
+            "corpId": null,
+            "children": [],
+            "childrenNum": 14,
+            "managementLevel": 1,
+            "fullName": "奥特曼大战葫芦哇",
+            "id": "1679654492540375099",
+            "legalDepartmentTree": "/1679654492540375040",
+            "parentId": ""
         }
     ],
     "managementLevel": "1",

@@ -7,12 +7,58 @@
 </head>
 
 <body>
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+            border: 0;
+        }
+    </style>
     <div id="mountNode"></div>
     <script src="https://gw.alipayobjects.com/os/antv/pkg/_antv.g6-3.7.1/dist/g6.min.js"></script>
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     <!-- 引入样式 -->
     <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <script src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script>
     <script>
+        /**
+         * @description: 第二版：容器宽度自动计算，不会出现溢出
+         * @param {num} containerWidth 容器宽度
+         * @param {num} margin 节点之间的间隙
+         * @param {array:[{}]} items 处理的数组
+         * @param {num} itemWidth 节点的宽度
+         * @param {num} beginCenterPoint 上级中点
+         * @return {*} 返回中值或者起始点的值
+         */
+        function centerArray(centerFlag, margin, items, itemWidth, beginCenterPoint) {
+            if (!(Array.isArray(items) && items.length > 0)) return []
+            containerWidth = items.length * itemWidth + (items.length - 1) * margin
+            let edgesWidth = 0 //头尾剩余宽度
+            let startLeft = 0 //起始节点起始值
+            let len = items.length * itemWidth
+            let returnArray = []
+            let marginWidthAll = (items.length - 1) * margin
+            //重新计算边缘间隙
+            edgesWidth = containerWidth - len - marginWidthAll
+            startLeft = edgesWidth / 2
+            if (centerFlag) {
+                //返回中值数组
+                returnArray = items.map((item, index) => {
+                    let _margin = index > 0 ? margin : 0
+                    let _startLeft = startLeft + (index * itemWidth) + _margin * index + itemWidth / 2
+                    return _startLeft + beginCenterPoint - containerWidth / 2
+                })
+            } else {
+                //返回起始值数组
+                returnArray = items.map((item, index) => {
+                    let _margin = index > 0 ? margin : 0
+                    let _startLeft = startLeft + (index * itemWidth) + _margin * index
+                    return _startLeft + beginCenterPoint - containerWidth / 2
+                })
+            }
+            return returnArray
+        }
+
         function getImageUrl(str) {
             let res = '../src/assets/dc-icon-省级.png'
             switch (str) {
@@ -60,6 +106,48 @@
             const nodes = []
             const edges = []
             const LEVLE_TYPE = 0 //法人层级
+            //定义连线
+            G6.registerEdge('hvh', {
+                draw(cfg, group) {
+                    const startPoint = cfg.startPoint;
+                    const endPoint = cfg.endPoint;
+                    const shape = group.addShape('path', {
+                        attrs: {
+                            stroke: '#333',
+                            path: [
+                                ['M', startPoint.x, startPoint.y],
+                                ['L', endPoint.x / 3 + (2 / 3) * startPoint.x, startPoint.y], // 三分之一处
+                                ['L', endPoint.x / 3 + (2 / 3) * startPoint.x, endPoint.y], // 三分之二处
+                                ['L', endPoint.x, endPoint.y],
+                            ],
+                        },
+                        // must be assigned in G6 3.3 and later versions. it can be any value you want
+                        name: 'path-shape',
+                    });
+                    return shape;
+                },
+            });
+            //定义连线
+            G6.registerEdge('vhv', {
+                draw(cfg, group) {
+                    const startPoint = cfg.startPoint;
+                    const endPoint = cfg.endPoint;
+                    const shape = group.addShape('path', {
+                        attrs: {
+                            stroke: '#333',
+                            path: [
+                                ['M', startPoint.x, startPoint.y],
+                                ['L', startPoint.x, endPoint.y / 3 + (2 / 3) * startPoint.y], // 三分之一处
+                                ['L', endPoint.x, endPoint.y / 3 + (2 / 3) * startPoint.y], // 三分之二处
+                                ['L', endPoint.x, endPoint.y],
+                            ],
+                        },
+                        // must be assigned in G6 3.3 and later versions. it can be any value you want
+                        name: 'path-shape1',
+                    });
+                    return shape;
+                },
+            });
             //自定义下级主节点
             G6.registerNode("sub-root", {
                 draw(cfg, group) {
@@ -101,6 +189,61 @@
                     })
                 }
             }, 'single-node')
+            //自定领导班子节点
+            G6.registerNode("overfill", {
+                draw(cfg, group) {
+                    const self = this
+                    return group.addShape("dom", {
+                        attrs: {
+                            width: cfg.size[0],
+                            height: cfg.size[1],
+                            // 传入 DOM 的 html，带有原生 onclick 事件
+                            html: `<div style="height:25px;display:flex;align-items:center;padding:10px;background-color:#eee" >
+                                <div onclick='console.log("xvcvc")' style='margin-left:10px'>超出节点...</div>
+                                </div>
+                                `,
+                        },
+                        draggable: false,
+                    })
+                }
+            }, 'single-node')
+            //自定领导班子节点
+            G6.registerNode("sub-leardership", {
+                draw(cfg, group) {
+                    const self = this
+                    return group.addShape("dom", {
+                        attrs: {
+                            width: cfg.size[0],
+                            height: cfg.size[1],
+                            // 传入 DOM 的 html，带有原生 onclick 事件
+                            html: `<div style="height:25px;display:flex;align-items:center;padding:10px;background-color:#eee" >
+                                <div style="color:green;align-self:end;font-size:12px">${cfg.data.name}</div>
+                                <div onclick='console.log("xvcvc")' style='margin-left:10px'>${cfg.data.position}</div>
+                                </div>
+                                `,
+                        },
+                        draggable: false,
+                    })
+                }
+            }, 'single-node')
+            //自定义内设部门节点
+            G6.registerNode("sub-institutionDepartment", {
+                draw(cfg, group) {
+                    const self = this
+                    return group.addShape("dom", {
+                        attrs: {
+                            width: cfg.size[0],
+                            height: cfg.size[1],
+                            // 传入 DOM 的 html，带有原生 onclick 事件
+                            html: `<div style="height:25px;display:flex;align-items:center;padding:10px;background-color:#eee" >
+                                <div style="color:green;align-self:end;font-size:12px">${cfg.data.name}</div>
+                                </div>
+                                `,
+                        },
+                        draggable: false,
+                    })
+                }
+            }, 'single-node')
             //自定义下级企业节点
             G6.registerNode("sub-company", {
                 draw(cfg, group) {
@@ -110,9 +253,31 @@
                             width: cfg.size[0],
                             height: cfg.size[1],
                             // 传入 DOM 的 html，带有原生 onclick 事件
-                            html: `<div style="height:25px;display:flex;align-items:center;padding:10px" >
+                            html: `<div style="height:25px;display:flex;align-items:center;padding:10px;background-color:#eee" >
                                 <img style="height:100%" src='${getImageUrl(cfg.data.corpLevel)}'/>
                                 <img style="height:100%" src='${getComapanyUrl()}'/>
+                                <div style="color:green;align-self:end;font-size:12px">${getLevel(cfg.data, LEVLE_TYPE)}级</div>
+                                <div onclick='console.log("xvcvc")' style='margin-left:10px'>${cfg.data.fullName}</div>
+                                <button type="button" class="el-button el-button--success is-circle">${cfg.data.mainOrNot}</button>
+                                </div>
+                                `,
+                        },
+                        draggable: false,
+                    })
+                }
+            }, 'single-node')
+            //自定义下级企业节点
+            G6.registerNode("thrid-company", {
+                draw(cfg, group) {
+                    const self = this
+                    return group.addShape("dom", {
+                        attrs: {
+                            width: cfg.size[0],
+                            height: cfg.size[1],
+                            // 传入 DOM 的 html，带有原生 onclick 事件
+                            html: `<div style="width:20px;display:flex;flex-direction: column;align-items:center;padding:10px;background-color:#eee" >
+                                <img style="width:100%;height:30px" src='${getImageUrl(cfg.data.corpLevel)}'/>
+                                <img style="width:100%;height:30px" src='${getComapanyUrl()}'/>
                                 <div style="color:green;align-self:end;font-size:12px">${getLevel(cfg.data, LEVLE_TYPE)}级</div>
                                 <div onclick='console.log("xvcvc")' style='margin-left:10px'>${cfg.data.fullName}</div>
                                 <button type="button" class="el-button el-button--success is-circle">${cfg.data.mainOrNot}</button>
@@ -131,53 +296,192 @@
             })
             //根企业节点
             nodes.push({
-                id: originData.enterpriseId,
-                x: relativeWidth / 2 -200,
+                id: "node-main",
+                x: relativeWidth / 2 - 200,
                 y: 50,
                 type: "main-company",
                 size: [400, 40],
-                data: originData
+                data: originData,
             }, {
                 id: "sub-root-leadershipDetailList",
-                x: relativeWidth / 3 -75,
+                x: relativeWidth / 3 - 75,
                 y: 200,
                 type: "sub-root",
                 nodeType: "leadershipDetailList",
-                nodeTypeCN:'领导班子',
+                nodeTypeCN: '领导班子',
                 size: [150, 40],
-                data: originData.leadershipDetailList/*领导班子*/
+                data: originData.leadershipDetailList/*领导班子*/,
+                anchorPoints: [
+                    [1, 0.5],
+                    [0, 0.5]
+                ],
             }, {
                 id: "sub-root-institutionDepartmentList",
-                x: relativeWidth / 3 *2 - 75,
+                x: relativeWidth / 3 * 2 - 75,
                 y: 200,
                 type: "sub-root",
                 nodeType: "institutionDepartmentList",
-                nodeTypeCN:'内设部门',
+                nodeTypeCN: '内设部门',
                 size: [150, 40],
-                data: originData.institutionDepartmentList/*内设部门*/
+                data: originData.institutionDepartmentList/*内设部门*/,
+                anchorPoints: [
+                    [1, 0.5],
+                    [0, 0.5]
+                ],
             }, {
                 id: "sub-root-enterpriseDraftTreeList",
-                x: relativeWidth / 2 -75,
+                x: relativeWidth / 2 - 75,
                 y: 400,
                 type: "sub-root",
                 nodeType: "enterpriseDraftTreeList",
-                nodeTypeCN:'下级企业',
+                nodeTypeCN: '下级企业',
                 size: [150, 40],
-                data: originData.enterpriseDraftTreeList/*下级企业*/
+                data: originData.enterpriseDraftTreeList/*下级企业*/,
+                anchorPoints: [
+                    [0.5, 0],
+                    [0.5, 1]
+                ],
             })
             edges.push({
-                source: originData.enterpriseId,
+                source: "node-main",
                 target: "sub-root-institutionDepartmentList",
-                type: 'polyline',
-            },{
-                source: originData.enterpriseId,
+                type: "polyline"
+            }, {
+                source: "node-main",
                 target: "sub-root-leadershipDetailList",
-                type: 'polyline',
-            },{
-                source: originData.enterpriseId,
+                type: 'polyline'
+            }, {
+                source: "node-main",
                 target: "sub-root-enterpriseDraftTreeList",
                 type: 'line',
             })
+            const INIT_POSITION = {
+                leftHight: 50,
+                leftWidth: 150,
+                rightHeight: 50,
+                rightWidth: 900
+            }
+            let leadershipContainerHeight = 400
+            const leadershipDetailWidth = 40
+            const leadershipDetailItemY = centerArray(false, 40, originData.leadershipDetailList, leadershipDetailWidth, 220)
+            originData.leadershipDetailList.forEach((item, index) => {
+                const yindex = leadershipDetailItemY[index] < 0 ? leadershipDetailItemY[index] * -1 : leadershipDetailItemY[index]
+                const type = leadershipDetailItemY[index] < 0 ? "overfill" : "sub-leardership"
+                nodes.push({
+                    id: `leadership-${index}`,
+                    x: INIT_POSITION.leftWidth,
+                    y: yindex,
+                    type,
+                    size: [150, leadershipDetailWidth],
+                    data: item/*内设部门*/,
+                    anchorPoints: [
+                        [1, 0.5],
+                    ],
+                })
+                edges.push({
+                    source: 'sub-root-leadershipDetailList',
+                    target: `leadership-${index}`,
+                })
+            })
+            let institutionDepartmentWidth = 40
+            let institutionDepartmentContainerHeight = 400
+            const institutionDepartmentItemY = centerArray(false, 10, originData.institutionDepartmentList, institutionDepartmentWidth, 220)
+            originData.institutionDepartmentList.forEach((item, index) => {
+                const yindex = institutionDepartmentItemY[index] < 0 ? institutionDepartmentItemY[index] * -1 : institutionDepartmentItemY[index]
+                const type = institutionDepartmentItemY[index] < 0 ? "overfill" : "sub-institutionDepartment"
+                nodes.push({
+                    id: `institutionDepartment-${index}`,
+                    x: INIT_POSITION.rightWidth,
+                    y: yindex,
+                    type,
+                    size: [150, institutionDepartmentWidth],
+                    data: item/*内设部门*/
+                })
+                edges.push({
+                    source: 'sub-root-institutionDepartmentList',
+                    target: `institutionDepartment-${index}`,
+                })
+            })
+            /**
+            * @description: 广度优先遍历
+            * @return {*}
+            */
+            let tempQuequ = []
+            let tempLevel = -1 //遍历层级，三级以上特殊处理
+            const levelLength = [800, 400, 200]
+            const marginLength = [200, 8, 8]
+            const itemWidth = [400, 40, 40] //每层的宽度
+            const itemHeight = [465, 560, 640]
+            const levelHeight = [40, 300, 300]
+            let parentY = 400
+            let initTreeX = 600
+            const MARGIN_LEVEL = 25
+            /**
+             * @description: 传入当前节点信息，返回下级节点坐标
+             * @param {*} startX
+             * @param {*} startY
+             * @param {*} height
+             * @param {*} margin
+             * @return [x,y] 返回x,y 坐标
+             */            
+            function getXale(treeList,item,levelNum) {
+                const levelHeight = [40, 300, 300] //每层节点的高度
+                const itemWidth = [400, 40, 40]  //每层节点的宽度
+                const MARGIN_LEVEL = 25
+                if(!item.initTreeX){item.initTreeX = 600}
+                item.nodeHeight = levelHeight[levelNum]
+                if(!item.parentY )item.parentY = 440
+                let idx = treeList.findIndex(ele=>ele.id ===item.id)
+                const xCenterList = centerArray(true, 10, treeList, itemWidth[levelNum], item.initTreeX)
+                const xList = centerArray(false, 10, treeList, itemWidth[levelNum], item.initTreeX)
+                item.children.forEach((i,index) =>{
+                    i.initTreeX =  xCenterList[idx]
+                    i.parentY = item.parentY +item.nodeHeight+ MARGIN_LEVEL
+                })
+                return [xList[idx], item.parentY + MARGIN_LEVEL,itemWidth[levelNum],levelHeight[levelNum]]
+            }
+            function BFS(treeList) {
+                tempLevel++;
+                let childrenList = []
+                treeList.forEach((item, index) => {
+                    tempQuequ.push(item)
+                })
+                let itemIndex = 0 //层级的第几个节点
+                while (tempQuequ.length > 0) {
+                    let i = tempQuequ.shift()
+                    let type = tempLevel > 0 ? "thrid-company" : "sub-company"
+                    if (!i.parentId) { i.parentId = "sub-root-enterpriseDraftTreeList" }
+                    const xy = getXale(treeList,i,tempLevel)
+                    //parentY = xy[1]
+                    nodes.push({
+                        id: i.id,
+                        x: xy[0],
+                        y: xy[1],
+                        type,
+                        data: i,
+                        size: [xy[2], xy[3]],
+                        anchorPoints: [
+                            [0.5, 0],
+                            [0.5, 1],
+                        ]
+                    })
+                    edges.push({
+                        source: i.parentId,
+                        target: i.id,
+                        type: "vhv"
+                    })
+                    if (Array.isArray(i.children) && i.children.length > 0) {
+                        childrenList = [...childrenList, ...i.children]
+                    }
+                    itemIndex++
+                }
+                if (childrenList.length > 0) {
+                    BFS(childrenList)
+                }
+
+            }
+            BFS(originData.enterpriseDraftTreeList)
+
             const data = {
                 nodes,
                 edges
@@ -185,10 +489,19 @@
             const graph = new G6.Graph({
                 container: 'mountNode',
                 renderer: 'svg',
-                width: 2000,
+                width: 6000,
                 height: 2000,
                 defaultNode: {
                     size: [400, 40],
+                    anchorPoints: [
+                        [0.5, 0],
+                        [0.5, 1],
+                        [1, 0.5],
+                        [0, 0.5]
+                    ],
+                },
+                defaultEdge: {
+                    type: 'hvh',
                 },
             });
             graph.data(data)
