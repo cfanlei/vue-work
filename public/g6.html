@@ -417,28 +417,75 @@
             let initTreeX = 600
             const MARGIN_LEVEL = 25
             /**
-             * @description: 传入当前节点信息，返回下级节点坐标
-             * @param {*} startX
-             * @param {*} startY
-             * @param {*} height
-             * @param {*} margin
-             * @return [x,y] 返回x,y 坐标
-             */            
-            function getXale(treeList,item,levelNum) {
+             * @description: 传入当前节点信息，返回当前节点坐标
+             * @param {*} treeList 当前节点的所有兄弟节点
+             * @param {*} item 当前节点
+             * @param {*} levelNum 遍历层级
+             * @return [x,y,sizewidth,sizeHeight] 返回x,y 坐标
+             */
+            function getXale(treeList, item, levelNum) {
                 const levelHeight = [40, 300, 300] //每层节点的高度
                 const itemWidth = [400, 40, 40]  //每层节点的宽度
-                const MARGIN_LEVEL = 25
-                if(!item.initTreeX){item.initTreeX = 600}
-                item.nodeHeight = levelHeight[levelNum]
-                if(!item.parentY )item.parentY = 440
-                let idx = treeList.findIndex(ele=>ele.id ===item.id)
-                const xCenterList = centerArray(true, 10, treeList, itemWidth[levelNum], item.initTreeX)
-                const xList = centerArray(false, 10, treeList, itemWidth[levelNum], item.initTreeX)
-                item.children.forEach((i,index) =>{
-                    i.initTreeX =  xCenterList[idx]
-                    i.parentY = item.parentY +item.nodeHeight+ MARGIN_LEVEL
+                const MARGIN_LEVEL = 25 //层级之间的间隙
+                const MARGIN_NODE = 10 //节点之间的间隙
+                if (!item.initTreeX) { item.initTreeX = 600 } //子树的中间位置
+                item.nodeHeight = levelHeight[levelNum] //节点的高度
+                item.nodeWidth = itemWidth[levelNum] //节点的宽度
+                if (!item.parentY) item.parentY = 440 //父节点的末端
+                let idx = treeList.findIndex(ele => ele.id === item.id)
+                const xCenterList1 = centerArray(true, MARGIN_NODE, treeList, itemWidth[levelNum], item.initTreeX)
+                if(item.id ==='1679655800391471104') debugger
+                if (item.children.length > 0) {
+                    item.childNodeBeginEndX = (() => {
+                        let wid = []
+                        const chXList = centerArray(false, MARGIN_NODE, item.children, itemWidth[levelNum + 1], xCenterList1[idx])
+                        wid[0] = chXList[0]
+                        wid[1] = chXList[chXList.length - 1]
+                        return wid
+                    })()
+                }
+                reverseBFS(item)
+                debugger
+                const xCenterList = centerArray(true, treeList[0].MARGIN_NODE??MARGIN_NODE, treeList, itemWidth[levelNum], item.initTreeX)
+                const xList = centerArray(false, treeList[0].MARGIN_NODE??MARGIN_NODE, treeList, itemWidth[levelNum], item.initTreeX)
+                item.children.forEach((i, index) => {
+                    i.initTreeX = xCenterList[idx]
+                    i.parentY = item.parentY + item.nodeHeight + MARGIN_LEVEL
                 })
-                return [xList[idx], item.parentY + MARGIN_LEVEL,itemWidth[levelNum],levelHeight[levelNum]]
+                return [xList[idx], item.parentY + MARGIN_LEVEL, itemWidth[levelNum], levelHeight[levelNum]]
+            }
+            function getMargin(tree) {
+                let ch = tree.children
+                let overfillLen = 0
+                for (let i = 0; i < ch.length; i++) {
+                    for (let j = i + 1; j < ch.length; j++) {
+                        if (ch[i].childNodeBeginEndX !== undefined && ch[j].childNodeBeginEndX !== undefined) {
+                            let first = ch[i].childNodeBeginEndX[1]
+                            let last = ch[j].childNodeBeginEndX[0]
+                            if (last - first < 0 && (last - first) * -1 > overfillLen) {
+                                overfillLen = (last - first) * -1
+                            }
+                        }
+                    }
+                }
+                tree.MARGIN_NODE = overfillLen + 10
+            }
+            let reverseBFSArr = []
+            function reverseBFS(tree) {
+                let tempArr = []
+                reverseBFSArr.push([tree])
+                if (tree.children.length > 0) {
+                    tree.children.forEach(item => {
+                        tempArr.push(item)
+                    })
+                    reverseBFSArr.push(tempArr)
+                }
+                while (reverseBFSArr.length > 0) {
+                    let lastLevelCh = reverseBFSArr.pop()
+                    lastLevelCh.forEach(item => {
+                        getMargin(item)
+                    })
+                }
             }
             function BFS(treeList) {
                 tempLevel++;
@@ -451,8 +498,7 @@
                     let i = tempQuequ.shift()
                     let type = tempLevel > 0 ? "thrid-company" : "sub-company"
                     if (!i.parentId) { i.parentId = "sub-root-enterpriseDraftTreeList" }
-                    const xy = getXale(treeList,i,tempLevel)
-                    //parentY = xy[1]
+                    const xy = getXale(treeList, i, tempLevel)
                     nodes.push({
                         id: i.id,
                         x: xy[0],

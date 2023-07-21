@@ -1,0 +1,230 @@
+<!--
+ * @Author: cfanlei cfanlei@126.com
+ * @Date: 2023-07-21 14:33:12
+ * @LastEditors: cfanlei cfanlei@126.com
+ * @LastEditTime: 2023-07-21 19:06:44
+ * @FilePath: /vue-ele/hello-world/public/org.html
+ * @Description: 这是默认设置,请设置`customMade`, 打开koroFileHeader查看配置 进行设置: https://github.com/OBKoro1/koro1FileHeader/wiki/%E9%85%8D%E7%BD%AE
+-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+
+</head>
+
+<body>
+    <div id="tree"></div>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://balkan.app/js/OrgChart.js"></script>
+    <script>
+
+        //JavaScript
+        OrgChart.templates.mainCompany = Object.assign({}, OrgChart.templates.base);
+        OrgChart.templates.mainCompany.size = [400, 40];
+        OrgChart.templates.mainCompany.node = '<rect x="0" y="0" width="400" height="40" fill="#eee"></rect>';
+        OrgChart.templates.mainCompany.level = '<text style="font-size: 18px;" fill="#11e109" x="30" y="30" text-anchor="middle">{val}级</text>';
+
+        OrgChart.templates.mainCompany.field_0 = '<text style="font-size: 18px;" fill="#000" x="165" y="30" text-anchor="middle">{val}</text>';
+        OrgChart.templates.mainCompany.img_0 = '<clipPath id="{randId}"><circle cx="50" cy="60" r="35"></circle></clipPath><image preserveAspectRatio="xMidYMid slice" clip-path="url(#{randId})" xlink:href="{val}" x="10" y="20"  width="80" height="80"></image>'
+
+        //分节点
+        OrgChart.templates.mainSet = Object.assign({}, OrgChart.templates.ana);
+        OrgChart.templates.mainSet.size = [200, 40];
+        OrgChart.templates.mainSet.node = '<rect x="0" y="0" width="200" height="40" fill="#eee"></rect>';
+        OrgChart.templates.mainSet.field_set_name = '<text style="font-size: 18px;" fill="#000" x="105" y="30" text-anchor="middle">{val}</text>';
+        OrgChart.templates.mainSet.img = '<image href="https://cdn.balkan.app/shared/1.jpg" x="300" y="20" height="40" width="40" />'
+
+        //领导班子
+        OrgChart.templates.leader = Object.assign({}, OrgChart.templates.ana);
+        OrgChart.templates.leader.size = [200, 60];
+        OrgChart.templates.leader.node = '<rect x="0" y="0" width="200" height="60" fill="#eee"></rect>';
+        OrgChart.templates.leader.name = '<text style="font-size: 18px;" fill="#000" x="105" y="30" text-anchor="middle">{val}</text>';
+        OrgChart.templates.leader.position = '<text style="font-size: 18px;" fill="#000" x="105" y="50" text-anchor="middle">{val}</text>';
+        //内设部门
+        OrgChart.templates.depart = Object.assign({}, OrgChart.templates.ana);
+        OrgChart.templates.depart.size = [200, 40];
+        OrgChart.templates.depart.node = '<rect x="0" y="0" width="200" height="40" fill="#eee"></rect>';
+        OrgChart.templates.depart.name = '<text style="font-size: 18px;" fill="#000" x="105" y="30" text-anchor="middle">{val}</text>';
+        //transform="rotate(90,80,80)"
+
+        //三级企业
+        OrgChart.templates.thridCompany = Object.assign({}, OrgChart.templates.ana);
+        OrgChart.templates.thridCompany.size = [40, 400];
+        OrgChart.templates.thridCompany.node = '<rect x="0" y="0" width="40" height="400" fill="#eee"></rect>';
+        OrgChart.templates.thridCompany.level = '<text style="font-size: 18px;" fill="#11e109" x="30" y="30" text-anchor="middle">{val}级</text>';
+
+        OrgChart.templates.thridCompany.field_0 = '<foreignObject x="0" y="80" width="40" height="400"><body xmIns="http://www.w3.org/1999/xhtml"><p style="writing-mode: vertical-rl">{val}</p></body></foreignObject>';
+        OrgChart.templates.thridCompany.img = '<image href="https://cdn.balkan.app/shared/1.jpg" x="30" y="20" height="40" width="40" />'
+
+        function render() {
+            var chart = new OrgChart(document.getElementById("tree"), {
+                mouseScrool: OrgChart.action.none,
+                enableSearch: false,
+                nodeBinding: {
+                    field_0: "fullName",
+                    level: "level",
+                    field_set_name: 'set',
+                    name: "name",
+                    position: 'position',
+                    img_0:'img'
+                },
+                tags: {
+                    "mainCompany": {
+                        template: "mainCompany"
+                    },
+                    "setMain": {
+                        template: 'mainSet'
+                    },
+                    "leader": {
+                        template: "leader"
+                    },
+                    "depart": {
+                        template: "depart"
+                    },
+                    "thridCompany": {
+                        template: 'thridCompany'
+                    },
+                    "node-with-left": {
+                        template: "invisibleGroup",
+                        subTreeConfig: {
+                            orientation: OrgChart.orientation.right
+                        }
+                    },
+                    "node-with-right": {
+                        template: "invisibleGroup",
+                        subTreeConfig: {
+                            orientation: OrgChart.orientation.left
+                        }
+                    },
+                },
+            });
+            /*
+            chart.load([
+                { id: 1, tags: ['mainCompany'], fullName: "门到门框猫咪找没找森貌似们", level: 1 },
+                { id: 2, pid: 1 },
+                { id: 3, stpid: 7, tags: ['setMain'], set: '内设部门机构' },
+                { id: 4, stpid: 6, tags: ['setMain'], set: '领导班子' },
+                { id: 5, pid: 4, name: "领导1", position: "吃饭", tags: ['leader'] },
+                { id: 9, pid: 4, name: "领导1", position: "吃饭", tags: ['leader'] },
+                { id: 13, pid: 4, name: "领导1", position: "吃饭", tags: ['leader'] },
+                { id: 14, pid: 4, name: "领导1", position: "吃饭", tags: ['leader'] },
+                { id: 15, pid: 4, name: "领导1", position: "吃饭", tags: ['leader'] },
+                { id: 'left', pid: 1, tags: ['assistant', 'node-with-left'] },
+                { id: 'right', pid: 1, tags: ['assistant', 'node-with-right'] },
+                { id: 8, pid: 3, name: "机构", tags: ['depart'] },
+                { id: 12, pid: 2, tags: ['thridCompany'], fullName: "门到门框猫咪找没找森貌似们", level: 1 },
+                { id: 10, pid: 2, tags: ['thridCompany'], fullName: "门到门框猫咪找没找森貌似们", level: 1 },
+                { id: 11, pid: 2, tags: ['thridCompany'], fullName: "门到门框猫咪找没找森貌似们", level: 1 },
+            ]);
+            */
+            return chart
+        }
+
+        const TYPE = "legalPersonLevel"
+        function orderTree(t0) {
+            let arr = []
+            let linearItems = []
+            arr.push(t0)
+            while (arr.length !== 0) {
+                let item = arr.shift()
+                if (!item.parentId) {
+                    item.parentId = "companySet"
+                }
+                item.tags = item[TYPE] >= 3 ? ['thridCompany'] : ['mainCompany']
+                item.pid = item.parentId
+                linearItems.push(item)
+                if (item.children.length > 0) {
+                    item.children.forEach((s) => {
+                        arr.push(s)
+                    })
+                }
+            }
+            return linearItems
+        }
+        function reverseBFS(tree) {
+            let tempArr = []
+            let reverseBFSArr = []
+            let linearItems = []
+            reverseBFSArr.push([tree])
+            if (tree.children.length > 0) {
+                tree.children.forEach(item => {
+                    tempArr.push(item)
+                })
+                reverseBFSArr.push(tempArr)
+            }
+            while (reverseBFSArr.length > 0) {
+                let lastLevelCh = reverseBFSArr.pop()
+                lastLevelCh.forEach(item => {
+                    if (!item.parentId) {
+                        item.parentId = "companySet"
+                    }
+                    item.tags = item[TYPE] >= 3 ? ['thridCompany'] : ['mainCompany']
+                    item.pid = item.parentId
+                    linearItems.push(item)
+                })
+            }
+            return linearItems
+        }
+        (async () => {
+            let data = null
+            await axios({
+                method: 'get',
+                url: 'http://localhost:4444',
+            }).then(res => {
+                data = res.data
+                const root = data
+                root.id = "rootId"
+                root.tags = ['mainCompany']
+                root.img = 'https://cdn.balkan.app/shared/4.jpg'
+                let nodes = []
+                nodes.push(root)
+                //领导班子
+                const learderRoot = { id: 'left', pid: "rootId", tags: ['assistant', 'node-with-left'] }
+                const leaderSet = {
+                    id: 'leaderSet',
+                    stpid: 'left',
+                    set: '领导班子',
+                    tags: ['setMain']
+                }
+                const leaders = data.leadershipDetailList.map(item => {
+                    item.pid = 'leaderSet'
+                    item.tags = ['leader']
+                    return item
+                })
+                nodes.push(leaderSet, learderRoot, ...leaders)
+                //内设机构部门
+                const departRoot = { id: 'right', pid: 'rootId', tags: ['assistant', 'node-with-right'] }
+                const departSet = {
+                    id: 'departSet',
+                    stpid: 'right',
+                    set: '内设机构部门',
+                    tags: ['setMain']
+                }
+                const departs = data.institutionDepartmentList.map(item => {
+                    item.pid = 'departSet'
+                    item.tags = ['depart']
+                    return item
+                })
+                nodes.push(departSet, departRoot, ...departs)
+
+                //企业
+                const companySet = {
+                    id: 'companySet',
+                    pid: 'rootId',
+                    set: '下级企业',
+                    tags: ['setMain']
+                }
+                const companys = orderTree(data.enterpriseDraftTreeList[0])
+                nodes.push(companySet, ...companys)
+                render().load(nodes)
+            });
+
+        })()
+    </script>
+</body>
+
+</html>
